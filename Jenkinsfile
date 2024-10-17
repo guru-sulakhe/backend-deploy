@@ -3,65 +3,62 @@ pipeline {
         label 'AGENT-1'
     }
     options {
-        timeout(time: 30, unit: 'MINUTES') 
+        timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
         ansiColor('xterm')
     }
     parameters {
         string(name: 'appVersion', defaultValue: '1.0.0', description: 'What is the application version?')
-
     }
-
     environment{
-        def appVersion = '' // global variable which can be accessed anywhere within the file
-        nexusUrl = 'nexus.guru97s.cloud:8081'
+        def appVersion = '' //variable declaration
+        nexusUrl = 'nexus.daws78s.online:8081'
     }
     stages {
-        stage('Print The Version'){
-            steps {
+        stage('print the version'){
+            steps{
                 script{
-                    echo "Application Version: ${params.appVersion}"
+                    echo "Application version: ${params.appVersion}"
                 }
             }
         }
         stage('Init'){
-            steps {
+            steps{
                 sh """
-                cd terraform
-                terraform init
-
+                    cd terraform
+                    terraform init
                 """
             }
         }
         stage('Plan'){
-            steps {
+            steps{
                 sh """
-                cd terraform
-                terraform plan -var="app_version=${params.appVersion}"
-
+                    pwd
+                    cd terraform
+                    terraform plan -var="app_version=${params.appVersion}"
                 """
             }
         }
-        /* stage('Deploy'){
-            steps {
-                sh """
-                cd terraform
-                terraform init
 
+        stage('Deploy'){
+            steps{
+                sh """
+                    cd terraform
+                    terraform apply -auto-approve -var="app_version=${params.appVersion}"
                 """
             }
-        } */
+        }
     }
-     post { 
+    post { 
         always { 
             echo 'I will always say Hello again!'
-            //deleteDir()
+            deleteDir()
         }
         success { 
-            echo 'I will run only when pipeline is success'
+            echo 'I will run when pipeline is success'
         }
         failure { 
-            echo 'I will run only when pipeline is failure'
+            echo 'I will run when pipeline is failure'
         }
-      }
+    }
 }
