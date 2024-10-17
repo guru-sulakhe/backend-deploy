@@ -36,4 +36,5 @@ pipeline {
             echo 'I will run only when pipeline is failure'
         }
       }
+    }
 }
