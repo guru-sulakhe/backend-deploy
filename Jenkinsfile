@@ -20,7 +20,7 @@ pipeline {
         stage('Print The Version'){
             steps {
                 script{
-                    echo "Application Version: ${paramsappVersion}"
+                    echo "Application Version: ${params.appVersion}"
                 }
             }
     }
