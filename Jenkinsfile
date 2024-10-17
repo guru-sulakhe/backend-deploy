@@ -23,6 +23,7 @@ pipeline {
                     echo "Application Version: ${params.appVersion}"
                 }
             }
+        }
     }
      post { 
         always { 
