@@ -49,15 +49,15 @@ pipeline {
             }
         }
 
-        stage('Destroy'){
-            steps{
-                sh """
-                    cd terraform
-                    terraform destroy -auto-approve -var="app_version=${params.appVersion}"
-                """
-            }
-        }
-    }
+    //     stage('Destroy'){
+    //         steps{
+    //             sh """
+    //                 cd terraform
+    //                 terraform destroy -auto-approve -var="app_version=${params.appVersion}"
+    //             """
+    //         }
+    //     }
+    // }
     post { 
         always { 
             echo 'I will always say Hello again!'
