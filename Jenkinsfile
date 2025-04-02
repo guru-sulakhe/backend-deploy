@@ -2,72 +2,86 @@ pipeline {
     agent {
         label 'AGENT-1'
     }
-    options {
+    options{
         timeout(time: 30, unit: 'MINUTES')
         disableConcurrentBuilds()
-        ansiColor('xterm')
+        //retry(1)
     }
-    parameters {
-        string(name: 'appVersion', defaultValue: '1.0.0', description: 'What is the application version?')
+    parameters{
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'qa', 'uat', 'pre-prod', 'prod'], description: 'Select your Environment')
+        string(name: 'version',  description: 'Enter your application version')
+        string(name: 'jira-id',  description: 'Enter your jira id')
     }
-    environment{
-        def appVersion = '' //variable declaration
-        nexusUrl = 'nexus.guru97s.cloud:8081'
+    environment {
+        appVersion = '' // this will become global, we can use across pipeline
+        region = 'us-east-1'
+        account_id = ''
+        project = 'expense'
+        environment = ''
+        component = 'backend'
     }
+
     stages {
-        stage('print the version'){
+        
+        stage('Setup Environment'){
             steps{
                 script{
-                    echo "Application version: ${params.appVersion}"
+                    environment = params.ENVIRONMENT
+                    appVersion = params.version
+                    account_id = pipelineGlobals.getAccountID(environment)
                 }
             }
         }
-        stage('Init'){
+        stage('Integration tests'){
+            when {
+                expression {params.ENVIRONMENT == 'qa'}
+            }
             steps{
-                sh """
-                    cd terraform
-                    terraform init
-                """
+                script{
+                    sh """
+                        echo "Run integration tests"
+                    """
+                }
             }
         }
-        stage('Plan'){
+        stage('Check JIRA'){
+            when {
+                expression {params.ENVIRONMENT == 'prod'}
+            }
             steps{
-                sh """
-                    pwd
-                    cd terraform
-                    terraform plan -var="app_version=${params.appVersion}"
-                """
+                script{
+                    sh """
+                        echo "check jira status"
+                        echo "check jira deployment window"
+                        echo "fail pipeline if above two are not true"
+                    """
+                }
             }
         }
-
         stage('Deploy'){
             steps{
-                sh """
-                    cd terraform
-                    terraform apply -auto-approve -var="app_version=${params.appVersion}"
-                """
+                withAWS(region: 'us-east-1', credentials: 'aws-creds') {
+                    sh """
+                        aws eks update-kubeconfig --region ${region} --name ${project}-dev
+                        cd helm
+                        sed -i 's/IMAGE_VERSION/${appVersion}/g' values-${environment}.yaml
+                        helm upgrade --install ${component} -n ${project} -f values-${environment}.yaml .
+                    """
+                }
             }
         }
+    }
 
-        stage('Destroy'){
-            steps{
-                sh """
-                    cd terraform
-                    terraform destroy -auto-approve -var="app_version=${params.appVersion}"
-                """
-            }
-        }
-     }
-    post { 
-        always { 
-            echo 'I will always say Hello again!'
+    post {
+        always{
+            echo "This sections runs always"
             deleteDir()
         }
-        success { 
-            echo 'I will run when pipeline is success'
+        success{
+            echo "This section run when pipeline success"
         }
-        failure { 
-            echo 'I will run when pipeline is failure'
+        failure{
+            echo "This section run when pipeline failure"
         }
     }
 }
